@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🚁 드론 탐험대</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ===== Screen 1: API 키 설정 ===== -->
+  <div id="screen-setup" class="screen active">
+    <div class="clouds-bg">
+      <div class="cloud cloud-1"></div>
+      <div class="cloud cloud-2"></div>
+      <div class="cloud cloud-3"></div>
+    </div>
+    <div class="setup-container">
+      <div class="logo-area">
+        <div class="drone-logo">🚁</div>
+        <h1 class="title-main">드론 탐험대</h1>
+        <p class="title-sub">AI가 만드는 나만의 게임 배경!</p>
+      </div>
+      <div class="card">
+        <h2 class="card-title">🔑 API 키 설정</h2>
+        <div class="form-group">
+          <label for="api-key-input">Google Gemini API 키</label>
+          <div class="input-eye-wrap">
+            <input
+              type="password"
+              id="api-key-input"
+              placeholder="API 키를 입력하세요"
+              autocomplete="off"
+            />
+            <button class="eye-btn" id="toggle-eye" title="보기/숨기기" aria-label="비밀번호 보기 토글">👁️</button>
+          </div>
+          <p class="hint">
+            API 키가 없으신가요?
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a>에서 무료로 발급받으세요.
+          </p>
+        </div>
+        <div class="form-group">
+          <label for="location-input">촬영 지역 명소 이름 <span class="optional">(선택)</span></label>
+          <input
+            type="text"
+            id="location-input"
+            placeholder="예: 한강공원, 남산타워, 제주 성산일출봉"
+          />
+        </div>
+        <div id="setup-error" class="error-msg hidden"></div>
+        <button class="btn btn-primary" id="btn-next-setup">다음으로 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Screen 2: 이미지 생성 ===== -->
+  <div id="screen-generate" class="screen">
+    <div class="gen-header">
+      <button class="btn-back" id="btn-back-setup">← 뒤로</button>
+      <h2>🎨 게임 배경 만들기</h2>
+    </div>
+    <div class="gen-container">
+      <!-- 왼쪽: 업로드 & 옵션 -->
+      <div class="gen-left">
+        <div class="card">
+          <h3 class="card-title">📸 드론 사진 업로드</h3>
+          <div class="upload-zone" id="upload-zone">
+            <div class="upload-inner" id="upload-inner">
+              <span class="upload-icon">📷</span>
+              <p>클릭하거나 사진을 드래그하세요</p>
+              <p class="upload-hint">JPG / PNG / WEBP</p>
+            </div>
+            <img id="upload-preview" class="upload-preview hidden" alt="미리보기" />
+            <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp" style="display:none" />
+          </div>
+          <button class="btn btn-ghost btn-sm" id="btn-remove-img" style="display:none">사진 제거 ✕</button>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">🎮 게임 스타일 선택</h3>
+          <div class="form-group">
+            <select id="style-select">
+              <option value="pixel">픽셀 레트로 (16-bit)</option>
+              <option value="anime">만화 / 애니메이션</option>
+              <option value="fantasy">판타지 (마법 분위기)</option>
+              <option value="cyberpunk">미래 / 사이버펑크</option>
+              <option value="watercolor">수채화 (파스텔)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="extra-input">추가 설명 <span class="optional">(선택)</span></label>
+            <input type="text" id="extra-input" placeholder="예: 노을 빛, 봄날, 눈 내리는" />
+          </div>
+        </div>
+
+        <div id="gen-error" class="error-msg hidden"></div>
+
+        <button class="btn btn-primary" id="btn-generate" disabled>✨ AI로 배경 만들기</button>
+        <button class="btn btn-secondary" id="btn-skip-gen">기본 하늘 배경으로 시작하기 →</button>
+      </div>
+
+      <!-- 오른쪽: 결과 -->
+      <div class="gen-right">
+        <div class="card result-card" id="result-card">
+          <h3 class="card-title">🖼️ 생성 결과</h3>
+          <div class="result-placeholder" id="result-placeholder">
+            <span>여기에 AI 생성 이미지가 표시됩니다</span>
+          </div>
+          <img id="result-img" class="result-img hidden" alt="AI 생성 배경" />
+          <button class="btn btn-game" id="btn-start-game" disabled>🚁 게임 시작!</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 로딩 오버레이 -->
+    <div class="loading-overlay hidden" id="loading-overlay">
+      <div class="loading-box">
+        <div class="loading-drone">🚁</div>
+        <p class="loading-text" id="loading-text">AI가 배경을 그리고 있어요...</p>
+        <div class="loading-dots"><span></span><span></span><span></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Screen 3: 게임 화면 ===== -->
+  <div id="screen-game" class="screen">
+    <div class="game-hud" id="game-hud">
+      <div class="hud-left">
+        <span class="hud-label">점수</span>
+        <span class="hud-value" id="hud-score">0</span>
+      </div>
+      <div class="hud-center">
+        <span id="hud-lives">❤️❤️❤️</span>
+      </div>
+      <div class="hud-right">
+        <span class="hud-label">시간</span>
+        <span class="hud-value" id="hud-time">00:00</span>
+      </div>
+      <button class="btn-hud-back" id="btn-back-gen" title="메뉴로 돌아가기">🏠</button>
+    </div>
+
+    <div class="canvas-wrap" id="canvas-wrap">
+      <canvas id="game-canvas" width="800" height="450"></canvas>
+
+      <!-- Ready 오버레이 -->
+      <div class="overlay" id="overlay-ready">
+        <div class="overlay-box">
+          <h2>🚁 탐험 준비!</h2>
+          <div class="controls-info">
+            <div class="ctrl-row">
+              <span class="ctrl-keys">↑ ↓ ← → / WASD</span>
+              <span>드론 조종</span>
+            </div>
+            <div class="ctrl-row">
+              <span class="ctrl-keys">D-pad</span>
+              <span>모바일 조종</span>
+            </div>
+          </div>
+          <p class="overlay-hint">장애물을 피하고 💰 코인을 수집하세요!</p>
+          <button class="btn btn-game" id="btn-ready-start">🚀 탐험 시작!</button>
+        </div>
+      </div>
+
+      <!-- Game Over 오버레이 -->
+      <div class="overlay hidden" id="overlay-gameover">
+        <div class="overlay-box">
+          <div class="grade-badge" id="grade-badge">🏆</div>
+          <h2>게임 오버</h2>
+          <p class="final-score-label">최종 점수</p>
+          <p class="final-score" id="final-score">0</p>
+          <button class="btn btn-game" id="btn-restart">🔄 다시 시작</button>
+          <button class="btn btn-secondary" id="btn-to-menu">🏠 메뉴로</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 모바일 D-pad -->
+    <div class="dpad" id="dpad">
+      <div class="dpad-row">
+        <button class="dpad-btn" id="dpad-up">▲</button>
+      </div>
+      <div class="dpad-row">
+        <button class="dpad-btn" id="dpad-left">◀</button>
+        <button class="dpad-btn dpad-center" disabled></button>
+        <button class="dpad-btn" id="dpad-right">▶</button>
+      </div>
+      <div class="dpad-row">
+        <button class="dpad-btn" id="dpad-down">▼</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
